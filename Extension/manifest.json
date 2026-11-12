@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube macOS PiP",
+  "version": "3.1.3",
+  "description": "ChromeのYouTubeからmacOSのネイティブPiPを1操作で開始し、最新の再生状態を元のタブへ引き継ぎます。",
+  "permissions": [
+    "nativeMessaging",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://m.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "macOS PiPを切り替える（Option+Shift+P）"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://m.youtube.com/*"
+      ],
+      "js": [
+        "pip.js",
+        "content.js"
+      ]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+P",
+        "mac": "Alt+Shift+P"
+      }
+    }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAurZ+wggGU2hNWmDei1H9hZNCYCDKjAMlHfkZioiuZmiYNYoZes3+zP5drQIcX3nfHdkRmAgK/Js1/DSd/GULghUyJUSLnpJ+escfLP0CIWfGS/sYGLps0MkN1EAeAqI7eCadZ+uJ/cRNCDJiGT/H1hE2kUMkKAJJtwqrzlilYxday9AE+cvruZsTnz80U9SDzUcnJnXHHiryG175HEDgLFRQw0UxEsHNj9Tt6Tr3qLGbl7rSJ0jcT3xf2SCiPo/KMPbWmnW3xGKYfPEh5X3ye2DMee6JJDXMoEaOiDozTmEHXzI1onsUkAPOm4+KacpXDAh1TlNgPtUX/acexZjRhwIDAQAB"
+}
