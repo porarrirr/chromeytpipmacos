@@ -63,6 +63,10 @@ Keep the original YouTube tab open. Navigating to another video ends the previou
 
 Close PiP, obtain the updated source, and run `./scripts/install.sh` again. Then reload the extension at `chrome://extensions`. Open YouTube tabs normally reconnect automatically; reload the tab if the controls do not update.
 
+App version **3.1.4** reduces extra waiting before PiP appears. When a prepared frame is within five seconds of Chrome’s position, it is reused to start presentation without another seek. Once a frame is available, the app requests PiP without waiting for the playback promise to finish buffering. After the window is confirmed visible, Chrome’s latest position and playback settings are applied. Initial loading and advertisements can still cause delays.
+
+This change is in the macOS app; the extension remains at **3.1.3**. Run the installer to update the app even if the extension version has not changed.
+
 ## How it works and data handling
 
 **Chrome extension → Native Messaging → macOS app / WKWebView**
@@ -144,6 +148,8 @@ After the standard suite has built the app and test helpers, these optional chec
 ./scripts/test-webkit.sh
 node Tests/youtube-smoke.mjs
 node Tests/chrome-smoke.mjs --youtube
+node Tests/chrome-smoke.mjs --youtube --warm
+node Tests/chrome-smoke.mjs --cold
 ```
 
 Chrome integration tests use `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` by default; set `CHROME_PATH` to use another Chrome executable. Generated files stay under `build/` or temporary test directories.

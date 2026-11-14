@@ -178,3 +178,83 @@ test('activation resumes after a seek completes without another canplay event', 
   p.video.emit('seeked');
   assert.equal(p.reports.at(-1).type, 'can-enter');
 });
+
+test('warm activation reuses a nearby decoded frame instead of starting a blocking seek', async () => {
+  const p = player();
+  p.api.start(desired(), 'dQw4w9WgXcQ', true);
+  let position = p.video.currentTime;
+  let seeks = 0;
+  Object.defineProperty(p.video, 'currentTime', {
+    get() { return position; },
+    set(value) { position = value; seeks++; p.video.readyState = 1; }
+  });
+  p.api.activate(desired({seconds: 24}));
+  assert.equal(seeks, 0, 'the warm frame must survive until presentation');
+  assert.equal(p.reports.at(-1).type, 'can-enter');
+  await p.api.enter();
+  assert.equal(p.reports.at(-1).type, 'ready');
+  assert.equal(p.video.muted, true);
+  await p.api.commit(desired({seconds: 24.5, paused: true}));
+  assert.equal(seeks, 1);
+  assert.equal(p.reports.at(-1).state.seconds, 24.5);
+  assert.equal(p.reports.at(-1).state.paused, true);
+});
+
+test('large position changes still seek before opening PiP', () => {
+  const p = player();
+  p.api.start(desired(), 'dQw4w9WgXcQ', true);
+  p.api.activate(desired({seconds: 70}));
+  assert.equal(p.video.currentTime, 70);
+});
+
+test('a warm player still seeking must not reuse its previous frame', () => {
+  const p = player();
+  p.api.start(desired(), 'dQw4w9WgXcQ', true);
+  p.video.seeking = true;
+  p.video.readyState = 1;
+  p.api.activate(desired({seconds: 24}));
+  assert.equal(p.video.currentTime, 24);
+  assert.equal(p.reports.some(event => event.type === 'can-enter'), false);
+  p.video.seeking = false;
+  p.video.readyState = 2;
+  p.video.emit('seeked');
+  assert.equal(p.reports.at(-1).type, 'can-enter');
+});
+
+test('warm live playback uses edge offset for frame reuse and applies the latest offset on commit', async () => {
+  const p = player({live: true});
+  p.api.start(desired({liveOffset: 8}), 'dQw4w9WgXcQ', true);
+  p.api.activate(desired({seconds: 200, liveOffset: 5}));
+  assert.equal(p.video.currentTime, 92);
+  await p.api.enter();
+  await p.api.commit(desired({seconds: 201, liveOffset: 4}));
+  assert.equal(p.reports.at(-1).state.liveOffset, 4);
+});
+
+test('PiP entry does not wait for play buffering and a paused commit may abort that play', async () => {
+  const p = player();
+  p.api.start(desired());
+  let rejectPlay;
+  p.video.play = () => new Promise((resolve, reject) => { rejectPlay = reject; });
+  p.api.enter();
+  assert.equal(p.reports.at(-1).type, 'ready', 'request presentation while play is still pending');
+  await p.api.commit(desired({paused: true}));
+  rejectPlay({name: 'AbortError'});
+  await Promise.resolve();
+  assert.equal(p.reports.at(-1).type, 'active');
+  assert.equal(p.reports.at(-1).state.paused, true);
+});
+
+test('play rejection is reported and cancellation suppresses a late rejection', async () => {
+  for (const cancel of [false, true]) {
+    const p = player();
+    p.api.start(desired());
+    let rejectPlay;
+    p.video.play = () => new Promise((resolve, reject) => { rejectPlay = reject; });
+    p.api.enter();
+    if (cancel) p.api.finish();
+    rejectPlay({name: 'NotAllowedError'});
+    await Promise.resolve();
+    assert.equal(p.reports.at(-1).type, cancel ? 'returned' : 'error');
+  }
+});

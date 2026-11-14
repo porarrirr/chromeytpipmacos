@@ -130,8 +130,11 @@
       return;
     }
     try {
-      await v.play();
-      if (finishing) return;
+      v.play().catch(error => {
+        if (!finishing && !(active && error?.name === 'AbortError')) {
+          emit('error', v, {error: 'macOSのPiPを開始できませんでした。'});
+        }
+      });
       v.webkitSetPresentationMode('picture-in-picture');
     } catch { emit('error', v, {error: 'macOSのPiPを開始できませんでした。'}); }
   }
@@ -180,9 +183,13 @@
     },
     activate(state) {
       if (requested || finishing) return;
+      const warmState = current && snapshot(current);
+      const nearby = warmState && (state.liveOffset == null) === (warmState.liveOffset == null)
+        && Math.abs(state.liveOffset != null ? state.liveOffset - warmState.liveOffset : state.seconds - warmState.seconds) <= 5;
+      const reuseFrame = prepared && current.readyState >= 2 && !current.seeking && nearby && !ad();
       requested = true;
       desired = state;
-      positionApplied = false;
+      positionApplied = Boolean(reuseFrame);
       refresh();
     }, enter, commit, control,
     finish, snapshot() { return current ? snapshot(current) : desired; }

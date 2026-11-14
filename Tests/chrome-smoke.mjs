@@ -243,6 +243,9 @@ try {
         const observer=new MutationObserver(check);observer.observe(document,{attributes:true,subtree:true});check();
       })`);
     }
+    if (liveSite) await evaluate(`(async () => {const p=document.getElementById('movie_player');const v=document.querySelector('video');
+      ${paused ? 'p.pauseVideo();v.pause();' : 'p.playVideo();await v.play();'}})()`, {userGesture:true});
+    assert.equal(await evaluate('document.querySelector("video").paused'), paused);
     console.log('Source before opening:', await evaluate(`({paused:document.querySelector('video').paused,time:document.querySelector('video').currentTime})`));
     await armPhase('active');
     await evaluate('globalThis.activationStarted=performance.now(); globalThis.pipVisibleMS=undefined; globalThis.handoffMS=undefined;');

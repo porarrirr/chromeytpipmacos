@@ -63,6 +63,10 @@ Chrome 会从 `Extension` 文件夹加载扩展，请在安装后保留该文件
 
 关闭画中画，更新源代码，然后再次执行 `./scripts/install.sh`。接着在 `chrome://extensions` 中重新加载扩展。已打开的 YouTube 标签页通常会自动重新连接；如果控件没有更新，请刷新视频标签页。
 
+应用 **3.1.4** 减少了画中画显示前的额外等待。如果预加载的画面与 Chrome 的播放位置相差不超过五秒，应用会直接利用该画面开始显示，避免再次跳转进度。已有可用画面时，应用会请求显示画中画，而不等待播放启动请求完成缓冲。确认窗口实际显示后，再应用 Chrome 的最新进度和播放设置。首次加载和广告仍可能造成等待。
+
+此更改位于 macOS 应用中，扩展版本仍为 **3.1.3**。即使扩展版本没有变化，也请运行安装脚本更新应用。
+
 ## 工作原理与数据处理
 
 **Chrome 扩展 → Native Messaging → macOS 应用／WKWebView**
@@ -144,6 +148,8 @@ node --test Tests/extension.test.mjs Tests/player.test.mjs
 ./scripts/test-webkit.sh
 node Tests/youtube-smoke.mjs
 node Tests/chrome-smoke.mjs --youtube
+node Tests/chrome-smoke.mjs --youtube --warm
+node Tests/chrome-smoke.mjs --cold
 ```
 
 Chrome 集成测试默认使用 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。如需使用其他 Chrome 可执行文件，可设置 `CHROME_PATH`。生成文件保存在 `build/` 或测试临时目录中。

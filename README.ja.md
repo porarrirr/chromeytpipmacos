@@ -63,6 +63,10 @@ Chromeは `Extension` フォルダから拡張機能を読み込みます。導�
 
 PiPを閉じてソースを更新し、`./scripts/install.sh` を再実行します。その後 `chrome://extensions` で拡張機能を再読み込みしてください。開いているYouTubeタブには通常、自動で再接続します。操作表示が更新されない場合は動画タブも再読み込みします。
 
+アプリ **3.1.4** では、PiP表示前の余分な待ち時間を減らしました。準備済みのフレームがChromeの再生位置から5秒以内なら、再シークせず表示開始に利用します。フレームが利用できる状態では、再生開始処理のバッファ待ち完了を待たずにPiP表示を要求します。実ウインドウの表示確認後にChromeの最新位置・再生設定を適用します。初回読み込みや広告による待ち時間は残ります。
+
+この変更はmacOSアプリ側のため、拡張機能は **3.1.3** のままです。拡張機能のバージョンが変わっていなくても、インストーラーを実行してアプリを更新してください。
+
 ## 仕組みとデータの扱い
 
 **Chrome拡張 → Native Messaging → macOSアプリ／WKWebView**
@@ -144,6 +148,8 @@ node --test Tests/extension.test.mjs Tests/player.test.mjs
 ./scripts/test-webkit.sh
 node Tests/youtube-smoke.mjs
 node Tests/chrome-smoke.mjs --youtube
+node Tests/chrome-smoke.mjs --youtube --warm
+node Tests/chrome-smoke.mjs --cold
 ```
 
 Chrome統合テストの既定の実行ファイルは `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` です。別のChromeを使う場合は `CHROME_PATH` を指定します。生成物は `build/` またはテスト用の一時フォルダに保存されます。
